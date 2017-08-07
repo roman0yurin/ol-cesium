@@ -180,6 +180,24 @@ olcs.OLCesium = function(options) {
   this.scene_.globe = this.globe_;
   this.scene_.skyAtmosphere = new Cesium.SkyAtmosphere();
 
+  function getDefaultSkyBoxUrl(suffix) {
+	  return Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_' + suffix + '.jpg');
+  }
+  skyBox = new Cesium.SkyBox({
+	  sources : {
+		  positiveX : getDefaultSkyBoxUrl('px'),
+		  negativeX : getDefaultSkyBoxUrl('mx'),
+		  positiveY : getDefaultSkyBoxUrl('py'),
+		  negativeY : getDefaultSkyBoxUrl('my'),
+		  positiveZ : getDefaultSkyBoxUrl('pz'),
+		  negativeZ : getDefaultSkyBoxUrl('mz')
+	  }
+  });
+  this.scene_.skyBox = skyBox;
+  this.scene_.sun = new Cesium.Sun();
+  this.scene_.moon = new Cesium.Moon();
+
+
   this.dataSourceCollection_ = new Cesium.DataSourceCollection();
   this.dataSourceDisplay_ = new Cesium.DataSourceDisplay({
     scene: this.scene_,
@@ -533,9 +551,10 @@ olcs.OLCesium.prototype.setEnabled = function(enable) {
     if (this.isOverMap_) {
       interactions = this.map_.getInteractions();
       interactions.forEach(function(el, i, arr) {
-        this.pausedInteractions_.push(el);
+        if(el.getActive())
+        	this.pausedInteractions_.push(el);
+        el.setActive(false);
       }, this);
-      interactions.clear();
 
       const rootGroup = this.map_.getLayerGroup();
       if (rootGroup.getVisible()) {
@@ -547,9 +566,8 @@ olcs.OLCesium.prototype.setEnabled = function(enable) {
     this.render_();
   } else {
     if (this.isOverMap_) {
-      interactions = this.map_.getInteractions();
       this.pausedInteractions_.forEach((interaction) => {
-        interactions.push(interaction);
+      	interaction.setActive(true);
       });
       this.pausedInteractions_.length = 0;
 

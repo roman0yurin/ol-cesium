@@ -377,8 +377,8 @@ olcs.core.tileLayerToImageryLayer = function(olLayer, viewProj) {
       return null; // do not sync layers with projections different than view
     }
 
-    const is3857 = projection === ol.proj.get('EPSG:3857');
-    const is4326 = projection === ol.proj.get('EPSG:4326');
+    const is3857 = projection.getCode() == 'EPSG:3857';
+    const is4326 = projection.getCode() == 'EPSG:4326';
     if (is3857 || is4326) {
       provider = new olcs.core.OLImageryProvider(source, viewProj);
     } else {

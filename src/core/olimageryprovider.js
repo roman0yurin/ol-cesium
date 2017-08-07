@@ -53,9 +53,6 @@ olcs.core.OLImageryProvider = function(source, opt_fallbackProj) {
 
   this.errorEvent_ = new Cesium.Event();
 
-  this.emptyCanvas_ = document.createElement('canvas');
-  this.emptyCanvas_.width = 1;
-  this.emptyCanvas_.height = 1;
 
   this.source_.on(ol.events.EventType.CHANGE, function(e) {
     this.handleSourceChanged_();
@@ -93,8 +90,9 @@ Object.defineProperties(olcs.core.OLImageryProvider.prototype, {
   'maximumLevel': {
     'get': /** @this {olcs.core.OLImageryProvider} */
         function() {
-          const tg = this.source_.getTileGrid();
-          return tg ? tg.getMaxZoom() : 18;
+        	return ol.DEFAULT_MAX_ZOOM; //Custom resolution are not applicable
+//          const tg = this.source_.getTileGrid();
+//          return tg ? tg.getMaxZoom() : 18;
         }
   },
 
@@ -153,9 +151,9 @@ olcs.core.OLImageryProvider.prototype.handleSourceChanged_ = function() {
   if (!this.ready_ && this.source_.getState() == 'ready') {
     const proj = this.source_.getProjection();
     this.projection_ = proj ? proj : this.fallbackProj_;
-    if (this.projection_ == ol.proj.get('EPSG:4326')) {
+    if (this.projection_.getCode() == 'EPSG:4326') {
       this.tilingScheme_ = new Cesium.GeographicTilingScheme();
-    } else if (this.projection_ == ol.proj.get('EPSG:3857')) {
+    } else if (this.projection_.getCode() == 'EPSG:3857') {
       this.tilingScheme_ = new Cesium.WebMercatorTilingScheme();
     } else {
       return;
@@ -232,13 +230,16 @@ olcs.core.OLImageryProvider.prototype.requestImage = function(x, y, level) {
     const y_ = -y - 1;
 
     let url = tileUrlFunction.call(this.source_,
-        [z_, x, y_], 1, this.projection_);
+        [z_, x, y_], 1, this.projection_,  /*default_resolutions=*/true);//Possible mismatch of resolutions array due to custom settings
     if (this.proxy_) {
       url = this.proxy_.getURL(url);
     }
-    return url ? Cesium.ImageryProvider.loadImage(this, url) : this.emptyCanvas_;
+    if(!url)
+    	throw "Can not determine tile URL.";
+    return Cesium.ImageryProvider.loadImage(this, url);
   } else {
+  	throw "Incorrect imaginary provider";
     // return empty canvas to stop Cesium from retrying later
-    return this.emptyCanvas_;
+    //return this.emptyCanvas_;
   }
 };
