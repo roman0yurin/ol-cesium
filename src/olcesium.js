@@ -101,24 +101,17 @@ olcs.OLCesium = function(options) {
    */
   this.isOverMap_ = !targetElement;
 
+  this.widget_ = new Cesium.CesiumWidget(this.container_, options.cesium);
+  this.eventHelper_ = new Cesium.EventHelper();
+
   /**
    * @type {!HTMLCanvasElement}
    * @private
    */
-  this.canvas_ = /** @type {!HTMLCanvasElement} */ (document.createElement('CANVAS'));
+  this.canvas_ = this.widget_.canvas; ///** @type {!HTMLCanvasElement} */ (document.createElement('CANVAS'));
   const canvasAttribute = document.createAttribute('style');
   canvasAttribute.value = fillArea;
   this.canvas_.setAttributeNode(canvasAttribute);
-
-  if (olcs.util.supportsImageRenderingPixelated()) {
-    // non standard CSS4
-    this.canvas_.style['imageRendering'] = olcs.util.imageRenderingValue();
-  }
-
-  this.canvas_.oncontextmenu = function() { return false; };
-  this.canvas_.onselectstart = function() { return false; };
-
-  this.container_.appendChild(this.canvas_);
 
   /**
    * @type {boolean}
@@ -138,16 +131,11 @@ olcs.OLCesium = function(options) {
    */
   this.hiddenRootGroup_ = null;
 
-  const sceneOptions = options.sceneOptions !== undefined ? options.sceneOptions :
-      /** @type {Cesium.SceneOptions} */ ({});
-  sceneOptions.canvas = this.canvas_;
-  sceneOptions.scene3DOnly = true;
-
   /**
    * @type {!Cesium.Scene}
    * @private
    */
-  this.scene_ = new Cesium.Scene(sceneOptions);
+  this.scene_ = this.widget_.scene; //new Cesium.Scene(sceneOptions);
 
   const sscc = this.scene_.screenSpaceCameraController;
 
@@ -171,32 +159,8 @@ olcs.OLCesium = function(options) {
    */
   this.camera_ = new olcs.Camera(this.scene_, this.map_);
 
-  /**
-   * @type {!Cesium.Globe}
-   * @private
-   */
-  this.globe_ = new Cesium.Globe(Cesium.Ellipsoid.WGS84);
+  this.globe_ = this.scene_.globe;
   this.globe_.baseColor = Cesium.Color.WHITE;
-  this.scene_.globe = this.globe_;
-  this.scene_.skyAtmosphere = new Cesium.SkyAtmosphere();
-
-  function getDefaultSkyBoxUrl(suffix) {
-	  return Cesium.buildModuleUrl('Assets/Textures/SkyBox/tycho2t3_80_' + suffix + '.jpg');
-  }
-  skyBox = new Cesium.SkyBox({
-	  sources : {
-		  positiveX : getDefaultSkyBoxUrl('px'),
-		  negativeX : getDefaultSkyBoxUrl('mx'),
-		  positiveY : getDefaultSkyBoxUrl('py'),
-		  negativeY : getDefaultSkyBoxUrl('my'),
-		  positiveZ : getDefaultSkyBoxUrl('pz'),
-		  negativeZ : getDefaultSkyBoxUrl('mz')
-	  }
-  });
-  this.scene_.skyBox = skyBox;
-  this.scene_.sun = new Cesium.Sun();
-  this.scene_.moon = new Cesium.Moon();
-
 
   this.dataSourceCollection_ = new Cesium.DataSourceCollection();
   this.dataSourceDisplay_ = new Cesium.DataSourceDisplay({
@@ -289,8 +253,29 @@ olcs.OLCesium = function(options) {
    */
   this.boundingSphereScratch_ = new Cesium.BoundingSphere();
 
-  const eventHelper = new Cesium.EventHelper();
-  eventHelper.add(this.scene_.postRender, olcs.OLCesium.prototype.updateTrackedEntity_, this);
+  this.eventHelper_.add(this.scene_.postRender, olcs.OLCesium.prototype.updateTrackedEntity_, this);
+
+  //init widgets
+  // Main Toolbar
+  this.toolbar_ = document.createElement('div');
+  this.toolbar_.className = 'cesium-viewer-toolbar';
+  this.container_.appendChild(this.toolbar_)
+
+
+   // Geocoder
+  var geocoder;
+  if (typeof options.geocoder == "undefined" || options.geocoder !== false) {
+	  var geocoderContainer = document.createElement('div');
+	  geocoderContainer.className = 'cesium-viewer-geocoderContainer';
+	  this.toolbar_.appendChild(geocoderContainer);
+	  this.geocoder_ = new Cesium.Geocoder({
+		  container : geocoderContainer,
+		  //geocoderServices: defined(options.geocoder) ? (isArray(options.geocoder) ? options.geocoder : [options.geocoder]) : undefined,
+		  scene : this.scene_
+	  });
+	  // Subscribe to search so that we can clear the trackedEntity when it is clicked.
+	  //this.eventHelper_.add(this.geocoder_.viewModel.search.beforeExecute, Viewer.prototype._clearObjects, this);
+  }
 };
 
 
@@ -475,6 +460,11 @@ olcs.OLCesium.prototype.handleResize_ = function() {
   this.scene_.camera.frustum.aspectRatio = width / height;
 };
 
+/**Базовый виджет Cesium, на который можно миксинить другие виджеты**/
+olcs.OLCesium.prototype.getWidget = function() {
+	return this.widget_;
+};
+
 
 /**
  * @return {!olcs.Camera}
@@ -493,6 +483,20 @@ olcs.OLCesium.prototype.getOlMap = function() {
   return this.map_;
 };
 
+/**Шина событий**/
+olcs.OLCesium.prototype.getEventHelper = function(){
+	return this.eventHelper_;
+}
+
+/**Поиск по адресу**/
+olcs.OLCesium.prototype.getGeocoder = function(){
+	return this.geocoder_;
+}
+
+/**Панель инструментов cesium**/
+olcs.OLCesium.prototype.getToolbar = function(){
+	return this.toolbar_;
+}
 
 /**
  * @return {!Cesium.Scene}

@@ -549,3 +549,7 @@ olcs.Camera.prototype.calcResolutionForDistance_ = function(distance, latitude) 
 
   return resolution;
 };
+
+olcs.Camera.prototype.getCesiumCamera = function(){
+	return this.cam_;
+}
