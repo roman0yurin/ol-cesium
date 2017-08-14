@@ -37,7 +37,7 @@ olcs.OLCesium = function(options) {
    * @private
    */
   this.time_ = options.time || function() {
-    return Cesium.JulianDate.now();
+    return this.widget_ ? this.widget_.clock.currentTime : Cesium.JulianDate.now();
   };
 
   /**
