@@ -840,18 +840,9 @@ olcs.FeatureConverter.prototype.olStyleToCesium = function(feature, style, outli
  */
 olcs.FeatureConverter.prototype.computePlainStyle = function(layer, feature, fallbackStyleFunction, resolution) {
   /**
-   * @type {ol.FeatureStyleFunction|undefined}
-   */
-  const featureStyleFunction = feature.getStyleFunction();
-
-  /**
    * @type {ol.style.Style|Array.<ol.style.Style>}
    */
-  let style = null;
-
-  if (featureStyleFunction) {
-    style = featureStyleFunction.call(feature, resolution);
-  }
+  let style = feature.getMapClass() ? feature.getMapClass().style : null;
 
   if (!style && fallbackStyleFunction) {
     style = fallbackStyleFunction(feature, resolution);
@@ -1007,7 +998,7 @@ olcs.FeatureConverter.prototype.olVectorLayerToCesium = function(olLayer, olView
       goog.asserts.assertInstanceof(imageSource, ol.source.ImageVector);
       layerStyle = imageSource.getStyleFunction();
     } else {
-      layerStyle = olLayer.getStyleFunction();
+      layerStyle = olLayer.getMapClass() ? olLayer.getMapClass().style : null;
     }
     const styles = this.computePlainStyle(olLayer, feature, layerStyle,
         resolution);

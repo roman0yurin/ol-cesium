@@ -88,7 +88,7 @@ olcs.VectorSynchronizer.prototype.removeAllCesiumObjects = function(destroy) {
  * @inheritDoc
  */
 olcs.VectorSynchronizer.prototype.createSingleLayerCounterparts = function(olLayer) {
-  if (!(olLayer instanceof ol.layer.Vector) &&
+  if (/*!(olLayer instanceof ol.layer.Vector) && TODO поддержка векторных слоев OpenLayers */
       !(olLayer instanceof ol.layer.Image &&
       olLayer.getSource() instanceof ol.source.ImageVector)) {
     return null;
